@@ -1,4 +1,4 @@
-module week.per/ssh_client
+module github.com/weekjie/ssh_client
 
 go 1.14
 

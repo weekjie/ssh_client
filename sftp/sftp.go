@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/pkg/sftp"
-	"week.per/ssh_client/base"
+	"github.com/weekjie/ssh_client/base"
 )
 
 // Client 对sftp.Client的封装
