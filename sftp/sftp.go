@@ -2,6 +2,7 @@ package sftp
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -84,7 +85,10 @@ func (c *Client) MGet(fileNamePatten string) error {
 		}
 		wg.Add(1)
 		go func(filenName string) {
-			c.Get(filenName)
+			err := c.Get(filenName)
+			if err != nil {
+				log.Println(err)
+			}
 			wg.Done()
 		}(dirName + "/" + f.Name())
 	}
@@ -93,11 +97,51 @@ func (c *Client) MGet(fileNamePatten string) error {
 }
 
 // Put 通过sftp上传单个文件
-func (c *Client) Put(fileName string) error {
+func (c *Client) Put(fileName, remotePath string) error {
+	err := c.MkdirAll(remotePath)
+	if err != nil {
+		return err
+	}
+	content, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	fw, err := c.OpenFile(remotePath+"/"+fileName, os.O_CREATE|os.O_RDWR)
+	if err != nil {
+		return err
+	}
+	defer fw.Close()
+	_, err = fw.Write(content)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // MPut 通过sftp上传多个匹配给出匹配符的多个文件
-func (c *Client) MPut(fileNameReg string) error {
+func (c *Client) MPut(fileNameReg, remotePath string) error {
+	localDir := path.Dir(fileNameReg)
+	var localLister base.Lister
+	localLister = new(base.LocalFileSystem)
+	files, err := base.ListPattern(&localLister, fileNameReg)
+	if err != nil {
+		return err
+	}
+	var wg sync.WaitGroup
+	for _, f := range files {
+		if f.IsDir() {
+			log.Printf("%s是目录, 无法上传\n", f.Name())
+			continue
+		}
+		wg.Add(1)
+		go func(localFilePath string) {
+			err := c.Put(localFilePath, remotePath)
+			if err != nil {
+				log.Println(err)
+			}
+			wg.Done()
+		}(localDir + "/" + f.Name())
+	}
+	wg.Wait()
 	return nil
 }

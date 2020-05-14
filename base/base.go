@@ -156,16 +156,16 @@ func (session *SSHSession) Quit() {
 	session.Close()
 }
 
-// LocalTerminal 本地终端, 用于在本地文件系统中执行操作
-type LocalTerminal struct{}
+// LocalFileSystem 本地终端, 用于在本地文件系统中执行操作
+type LocalFileSystem struct{}
 
 // Lstat 对默认Lstat方法的封装
-func (l *LocalTerminal) Lstat(p string) (os.FileInfo, error) {
+func (l *LocalFileSystem) Lstat(p string) (os.FileInfo, error) {
 	return os.Lstat(p)
 }
 
 // ReadDir 对默认ReadDir方法的封装
-func (l *LocalTerminal) ReadDir(p string) ([]os.FileInfo, error) {
+func (l *LocalFileSystem) ReadDir(p string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(p)
 }
 
@@ -177,7 +177,7 @@ type Lister interface {
 
 // List 通过Lister接口, 列出指定路径p中的文件列表
 func List(l *Lister, p string) ([]os.FileInfo, error) {
-	log.Printf("%#v\n", *l)
+	// log.Printf("%#v\n", *l)
 	dirInfo, err := (*l).Lstat(p)
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func List(l *Lister, p string) ([]os.FileInfo, error) {
 		msg := fmt.Sprintf("%s is not a directory", p)
 		return nil, errors.New(msg)
 	}
-	log.Printf("%v\n", dirInfo)
+	// log.Printf("%v\n", dirInfo)
 	return (*l).ReadDir(p)
 }
 
